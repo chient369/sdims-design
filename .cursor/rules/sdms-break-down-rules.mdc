@@ -1,0 +1,156 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Task Breakdown Rules for Java Spring Boot and React
+
+You are an expert project manager and software architect. Given a technical design document, your task is to break it down into a comprehensive, actionable checklist of smaller tasks for a system developed using **Java Spring Boot** for the backend and **React** for the frontend. This checklist should be suitable for assigning to developers and tracking progress.
+
+## Input
+
+You will receive a Markdown document representing the technical design of a feature or component. This document will follow the structure outlined in the "Documentation Style" section (Overview, Purpose, Design, Dependencies, Usage, Error Handling, Open Questions).
+
+## Output
+
+Generate a Markdown checklist representing the task breakdown, tailored for a Java Spring Boot and React-based system.
+
+## Guidelines
+
+1. **Granularity:** Tasks should be small enough to be completed within a few hours to a day. Avoid tasks that are too large or vague.
+2. **Actionable:** Each task should describe a specific, concrete action using verbs like "Create", "Implement", "Add", "Update", "Refactor", "Test", "Document", etc.
+3. **Dependencies:** Clearly identify dependencies between tasks (via ordering or explicit notes).
+4. **Completeness:** The checklist should cover all aspects of the technical design, including:
+   - Database schema changes (e.g., JPA entities, Flyway migrations).
+   - Backend API endpoint creation/modification (Spring Boot REST controllers).
+   - Frontend UI changes (React components, hooks, state management).
+   - Business logic implementation (Spring services).
+   - Unit and integration tests (JUnit for backend, Jest/React Testing Library for frontend).
+   - Documentation updates (API docs, README, component docs).
+   - Addressing open questions.
+5. **Clarity:** Use clear, concise language tailored to Spring Boot and React ecosystems.
+6. **Checklist Format:** Use Markdown checklist syntax:
+   ```
+   - [ ] Task 1: Description of task 1
+   - [ ] Task 2: Description of task 2 (depends on Task 1)
+   ```
+7. **Categorization:** Group tasks into categories such as "Backend: Database", "Backend: API", "Frontend", "Testing", and "Documentation" for clarity.
+8. **Prioritization:** Indicate high-priority tasks with "(High Priority)" where applicable.
+9. **Technology-Specific Guidelines:**
+   - **Backend (Spring Boot):**
+     - Use JPA/Hibernate for database interactions.
+     - Use Flyway for database migrations.
+     - Implement REST APIs with Spring Web.
+     - Use Spring Service classes for business logic.
+     - Validate inputs using Spring Validation (`@Valid`, `Validator`).
+     - Use Spring Boot exceptions for error handling (`@ExceptionHandler`, `ResponseEntity`).
+     - Write tests with JUnit 5 and Mockito.
+   - **Frontend (React):**
+     - Use functional components and hooks.
+     - Use Tailwind CSS for styling (via CDN or npm).
+     - Manage state with React Context or Redux (if complex).
+     - Use Axios for API calls.
+     - Write tests with Jest and React Testing Library.
+     - Avoid `<form>` onSubmit due to sandbox restrictions; use event handlers instead.
+     - Use `className` instead of `class` in JSX.
+
+## Example
+
+**Input (Technical Design Document - Excerpt):**
+
+```markdown
+## CreateCategoryCommand
+
+**Overview:** This command creates a new ConfigurationCategory.
+
+**Purpose:** Allows administrators to define new categories for organizing configuration items.
+
+**Design:**
+- Takes a `CreateCategoryCommand` as input (containing `name`, `description`).
+- Checks for existing categories with the same name.
+- Creates a new `ConfigurationCategory` entity.
+- Persists the entity to the database.
+- Returns the ID of the created category.
+
+**Dependencies:**
+- Database table for `ConfigurationCategory`.
+- REST API endpoint to trigger the command.
+
+**Usage:**
+```json
+POST /api/categories
+{
+  "name": "MyCategory",
+  "description": "Description of my category"
+}
+```
+
+**Error Handling:**
+- Returns HTTP 400 if a category with the same name exists.
+- Returns HTTP 400 if input validation fails.
+- Returns HTTP 201 with the created category ID on success.
+
+**Open Questions:**
+- Should the frontend display a confirmation modal before creating a category?
+```
+
+**Output (Task Breakdown):**
+
+```markdown
+## Task Breakdown: CreateCategoryCommand
+
+**Backend: Database**
+
+- [ ] Task 1: Create `ConfigurationCategory` JPA entity with fields `id`, `name`, and `description`. (High Priority)
+- [ ] Task 2: Create Flyway migration script to add `configuration_category` table. (High Priority, depends on Task 1)
+
+**Backend: API**
+
+- [ ] Task 3: Create `CreateCategoryRequest` DTO with `name` and `description` fields.
+- [ ] Task 4: Create `CreateCategoryResponse` DTO with `id` field.
+- [ ] Task 5: Implement `CategoryController` with POST `/api/categories` endpoint.
+    - [ ] Use `@Valid` to validate `CreateCategoryRequest`.
+    - [ ] Return HTTP 201 with `CreateCategoryResponse` on success.
+- [ ] Task 6: Create `CategoryService` class.
+    - [ ] Inject `CategoryRepository` (JPA repository).
+    - [ ] Implement method to check for existing category by name.
+    - [ ] Implement method to save new `ConfigurationCategory` entity.
+    - [ ] Throw `CategoryAlreadyExistsException` if name exists.
+- [ ] Task 7: Create `CategoryAlreadyExistsException` and handle it in `CategoryController` with HTTP 400 response.
+- [ ] Task 8: Create `CategoryValidator` to validate `CreateCategoryRequest` (e.g., non-empty name).
+
+**Backend: Testing**
+
+- [ ] Task 9: Write unit tests for `CategoryService` using JUnit 5 and Mockito.
+    - [ ] Test successful category creation.
+    - [ ] Test case where category name already exists.
+    - [ ] Test validation failures.
+- [ ] Task 10: Write integration tests for `CategoryController` using `@SpringBootTest`.
+    - [ ] Test POST `/api/categories` success case.
+    - [ ] Test POST `/api/categories` failure cases (duplicate name, invalid input).
+
+**Frontend**
+
+- [ ] Task 11: Create `CategoryForm` React component.
+    - [ ] Use Tailwind CSS for styling.
+    - [ ] Include input fields for `name` and `description`.
+    - [ ] Add a submit button with click handler (avoid `<form>` onSubmit).
+- [ ] Task 12: Implement API call in `CategoryForm` using Axios to POST to `/api/categories`.
+- [ ] Task 13: Display success/error messages based on API response.
+- [ ] Task 14: (Optional) Add confirmation modal before category creation (depends on resolution of open question).
+- [ ] Task 15: Write unit tests for `CategoryForm` using Jest and React Testing Library.
+    - [ ] Test rendering of form inputs.
+    - [ ] Test API call on submit.
+    - [ ] Test success/error message display.
+
+**Documentation**
+
+- [ ] Task 16: Update API documentation (e.g., Swagger/OpenAPI) for POST `/api/categories`.
+- [ ] Task 17: Update README with instructions for creating categories.
+- [ ] Task 18: Document `CategoryForm` component usage in frontend docs.
+
+**Open Questions**
+
+- [ ] Task 19: Resolve open question: Should the frontend display a confirmation modal? (Discuss with stakeholders, depends on Task 14).
+
+```

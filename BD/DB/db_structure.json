@@ -1,0 +1,2180 @@
+{
+    "schema_version": "1.0",
+    "notes": [
+        "Data types are PostgreSQL-like.",
+        "TIMESTAMPTZ implies TIMESTAMP WITH TIME ZONE.",
+        "Consider adding database indexes to Foreign Keys and frequently queried columns for performance.",
+        "Soft deletes (using deleted_at) are included for Employees and Contracts. Consider for other tables if needed.",
+        "Enum-like fields are represented as VARCHAR; actual implementation might use ENUM types or check constraints.",
+        "Default values (like CURRENT_TIMESTAMP or sequences for IDs) should be added during table creation script generation."
+    ],
+    "tables": {
+        "users": {
+            "description": "Stores user accounts for login and identity.",
+            "columns": [
+                {
+                    "name": "id",
+                    "type": "BIGSERIAL",
+                    "constraints": [
+                        "PK"
+                    ],
+                    "description": "Unique identifier for the user."
+                },
+                {
+                    "name": "username",
+                    "type": "VARCHAR(255)",
+                    "constraints": [
+                        "UQ",
+                        "NN"
+                    ],
+                    "description": "Login username.",
+                    "indexed": true
+                },
+                {
+                    "name": "password_hash",
+                    "type": "VARCHAR(255)",
+                    "constraints": [
+                        "NN"
+                    ],
+                    "description": "Hashed password.",
+                    "sensitive": true
+                },
+                {
+                    "name": "email",
+                    "type": "VARCHAR(255)",
+                    "constraints": [
+                        "UQ",
+                        "NN"
+                    ],
+                    "description": "User's email address.",
+                    "indexed": true
+                },
+                {
+                    "name": "full_name",
+                    "type": "VARCHAR(255)",
+                    "constraints": [],
+                    "description": "User's full name."
+                },
+                {
+                    "name": "created_at",
+                    "type": "TIMESTAMPTZ",
+                    "constraints": [
+                        "NN",
+                        "DEFAULT_NOW"
+                    ],
+                    "description": "Timestamp of creation."
+                },
+                {
+                    "name": "updated_at",
+                    "type": "TIMESTAMPTZ",
+                    "constraints": [
+                        "NN",
+                        "DEFAULT_NOW"
+                    ],
+                    "description": "Timestamp of last update."
+                }
+            ],
+            "relationships": []
+        },
+        "roles": {
+            "description": "Defines user roles within the system.",
+            "columns": [
+                {
+                    "name": "id",
+                    "type": "BIGSERIAL",
+                    "constraints": [
+                        "PK"
+                    ],
+                    "description": "Unique identifier for the role."
+                },
+                {
+                    "name": "name",
+                    "type": "VARCHAR(100)",
+                    "constraints": [
+                        "UQ",
+                        "NN"
+                    ],
+                    "description": "Unique name of the role (e.g., Admin, Leader, Sales).",
+                    "indexed": true
+                },
+                {
+                    "name": "description",
+                    "type": "TEXT",
+                    "constraints": [],
+                    "description": "Description of the role's purpose."
+                },
+                {
+                    "name": "created_at",
+                    "type": "TIMESTAMPTZ",
+                    "constraints": [
+                        "NN",
+                        "DEFAULT_NOW"
+                    ]
+                },
+                {
+                    "name": "updated_at",
+                    "type": "TIMESTAMPTZ",
+                    "constraints": [
+                        "NN",
+                        "DEFAULT_NOW"
+                    ]
+                }
+            ],
+            "relationships": []
+        },
+        "permissions": {
+            "description": "Defines specific permissions that can be granted to roles.",
+            "columns": [
+                {
+                    "name": "id",
+                    "type": "BIGSERIAL",
+                    "constraints": [
+                        "PK"
+                    ],
+                    "description": "Unique identifier for the permission."
+                },
+                {
+                    "name": "name",
+                    "type": "VARCHAR(100)",
+                    "constraints": [
+                        "UQ",
+                        "NN"
+                    ],
+                    "description": "Unique name of the permission (e.g., view_margin, edit_contract).",
+                    "indexed": true
+                },
+                {
+                    "name": "description",
+                    "type": "TEXT",
+                    "constraints": [],
+                    "description": "Description of what the permission allows."
+                },
+                {
+                    "name": "created_at",
+                    "type": "TIMESTAMPTZ",
+                    "constraints": [
+                        "NN",
+                        "DEFAULT_NOW"
+                    ]
+                },
+                {
+                    "name": "updated_at",
+                    "type": "TIMESTAMPTZ",
+                    "constraints": [
+                        "NN",
+                        "DEFAULT_NOW"
+                    ]
+                }
+            ],
+            "relationships": []
+        },
+        "user_roles": {
+            "description": "Junction table linking users to roles (Many-to-Many).",
+            "columns": [
+                {
+                    "name": "user_id",
+                    "type": "BIGINT",
+                    "constraints": [
+                        "PK",
+                        "FK",
+                        "NN"
+                    ],
+                    "references": {
+                        "table": "users",
+                        "column": "id"
+                    },
+                    "description": "Foreign key referencing the user.",
+                    "indexed": true
+                },
+                {
+                    "name": "role_id",
+                    "type": "BIGINT",
+                    "constraints": [
+                        "PK",
+                        "FK",
+                        "NN"
+                    ],
+                    "references": {
+                        "table": "roles",
+                        "column": "id"
+                    },
+                    "description": "Foreign key referencing the role.",
+                    "indexed": true
+                }
+            ],
+            "relationships": [
+                {
+                    "type": "many-to-one",
+                    "related_table": "users",
+                    "foreign_key": "user_id"
+                },
+                {
+                    "type": "many-to-one",
+                    "related_table": "roles",
+                    "foreign_key": "role_id"
+                }
+            ]
+        },
+        "role_permissions": {
+            "description": "Junction table linking roles to permissions (Many-to-Many).",
+            "columns": [
+                {
+                    "name": "role_id",
+                    "type": "BIGINT",
+                    "constraints": [
+                        "PK",
+                        "FK",
+                        "NN"
+                    ],
+                    "references": {
+                        "table": "roles",
+                        "column": "id"
+                    },
+                    "description": "Foreign key referencing the role.",
+                    "indexed": true
+                },
+                {
+                    "name": "permission_id",
+                    "type": "BIGINT",
+                    "constraints": [
+                        "PK",
+                        "FK",
+                        "NN"
+                    ],
+                    "references": {
+                        "table": "permissions",
+                        "column": "id"
+                    },
+                    "description": "Foreign key referencing the permission.",
+                    "indexed": true
+                }
+            ],
+            "relationships": [
+                {
+                    "type": "many-to-one",
+                    "related_table": "roles",
+                    "foreign_key": "role_id"
+                },
+                {
+                    "type": "many-to-one",
+                    "related_table": "permissions",
+                    "foreign_key": "permission_id"
+                }
+            ]
+        },
+        "employees": {
+            "description": "Stores detailed information about employees.",
+            "columns": [
+                {
+                    "name": "id",
+                    "type": "BIGSERIAL",
+                    "constraints": [
+                        "PK"
+                    ]
+                },
+                {
+                    "name": "user_id",
+                    "type": "BIGINT",
+                    "constraints": [
+                        "FK",
+                        "UQ"
+                    ],
+                    "references": {
+                        "table": "users",
+                        "column": "id"
+                    },
+                    "description": "Link to the user account (optional, if employee is a system user)."
+                },
+                {
+                    "name": "employee_code",
+                    "type": "VARCHAR(50)",
+                    "constraints": [
+                        "UQ",
+                        "NN"
+                    ],
+                    "description": "Unique employee identifier code.",
+                    "indexed": true
+                },
+                {
+                    "name": "first_name",
+                    "type": "VARCHAR(100)",
+                    "constraints": [
+                        "NN"
+                    ]
+                },
+                {
+                    "name": "last_name",
+                    "type": "VARCHAR(100)",
+                    "constraints": [
+                        "NN"
+                    ]
+                },
+                {
+                    "name": "birth_date",
+                    "type": "DATE",
+                    "constraints": []
+                },
+                {
+                    "name": "hire_date",
+                    "type": "DATE",
+                    "constraints": []
+                },
+                {
+                    "name": "company_email",
+                    "type": "VARCHAR(255)",
+                    "constraints": [
+                        "UQ",
+                        "NN"
+                    ],
+                    "description": "Employee's company email.",
+                    "indexed": true
+                },
+                {
+                    "name": "internal_account",
+                    "type": "VARCHAR(100)",
+                    "constraints": [],
+                    "description": "Internal system account name, if different from username.",
+                    "indexed": true
+                },
+                {
+                    "name": "address",
+                    "type": "TEXT",
+                    "constraints": []
+                },
+                {
+                    "name": "phone_number",
+                    "type": "VARCHAR(50)",
+                    "constraints": []
+                },
+                {
+                    "name": "emergency_contact",
+                    "type": "TEXT",
+                    "constraints": [],
+                    "description": "Emergency contact information."
+                },
+                {
+                    "name": "position",
+                    "type": "VARCHAR(100)",
+                    "constraints": [],
+                    "description": "Job title or position.",
+                    "indexed": true
+                },
+                {
+                    "name": "team",
+                    "type": "VARCHAR(100)",
+                    "constraints": [],
+                    "description": "Team or department name.",
+                    "indexed": true
+                },
+                {
+                    "name": "reporting_leader_id",
+                    "type": "BIGINT",
+                    "constraints": [
+                        "FK"
+                    ],
+                    "references": {
+                        "table": "users",
+                        "column": "id"
+                    },
+                    "description": "Link to the user ID of the direct manager/leader.",
+                    "indexed": true
+                },
+                {
+                    "name": "current_status",
+                    "type": "VARCHAR(50)",
+                    "constraints": [],
+                    "description": "Current working status (Allocated, Available, EndingSoon, OnLeave, Resigned).",
+                    "indexed": true
+                },
+                {
+                    "name": "status_updated_at",
+                    "type": "TIMESTAMPTZ",
+                    "constraints": [],
+                    "description": "Timestamp when the status was last updated."
+                },
+                {
+                    "name": "profile_picture_url",
+                    "type": "VARCHAR(500)",
+                    "constraints": [],
+                    "description": "URL to the employee's profile picture."
+                },
+                {
+                    "name": "created_at",
+                    "type": "TIMESTAMPTZ",
+                    "constraints": [
+                        "NN",
+                        "DEFAULT_NOW"
+                    ]
+                },
+                {
+                    "name": "updated_at",
+                    "type": "TIMESTAMPTZ",
+                    "constraints": [
+                        "NN",
+                        "DEFAULT_NOW"
+                    ]
+                },
+                {
+                    "name": "created_by",
+                    "type": "BIGINT",
+                    "constraints": [
+                        "FK"
+                    ],
+                    "references": {
+                        "table": "users",
+                        "column": "id"
+                    },
+                    "description": "User who created this record.",
+                    "indexed": true
+                },
+                {
+                    "name": "updated_by",
+                    "type": "BIGINT",
+                    "constraints": [
+                        "FK"
+                    ],
+                    "references": {
+                        "table": "users",
+                        "column": "id"
+                    },
+                    "description": "User who last updated this record.",
+                    "indexed": true
+                },
+                {
+                    "name": "deleted_at",
+                    "type": "TIMESTAMPTZ",
+                    "constraints": [],
+                    "description": "Timestamp for soft delete. Null if not deleted.",
+                    "indexed": true
+                }
+            ],
+            "relationships": [
+                {
+                    "type": "one-to-one",
+                    "related_table": "users",
+                    "foreign_key": "user_id"
+                }
+            ]
+        },
+        "skill_categories": {
+            "description": "Stores categories for grouping skills (e.g., Programming Language, Framework).",
+            "columns": [
+                {
+                    "name": "id",
+                    "type": "BIGSERIAL",
+                    "constraints": [
+                        "PK"
+                    ]
+                },
+                {
+                    "name": "name",
+                    "type": "VARCHAR(100)",
+                    "constraints": [
+                        "UQ",
+                        "NN"
+                    ],
+                    "description": "Name of the skill category.",
+                    "indexed": true
+                },
+                {
+                    "name": "description",
+                    "type": "TEXT",
+                    "constraints": []
+                },
+                {
+                    "name": "created_at",
+                    "type": "TIMESTAMPTZ",
+                    "constraints": [
+                        "NN",
+                        "DEFAULT_NOW"
+                    ]
+                },
+                {
+                    "name": "updated_at",
+                    "type": "TIMESTAMPTZ",
+                    "constraints": [
+                        "NN",
+                        "DEFAULT_NOW"
+                    ]
+                }
+            ],
+            "relationships": []
+        },
+        "skills": {
+            "description": "Stores the master list of skills available in the system.",
+            "columns": [
+                {
+                    "name": "id",
+                    "type": "BIGSERIAL",
+                    "constraints": [
+                        "PK"
+                    ]
+                },
+                {
+                    "name": "category_id",
+                    "type": "BIGINT",
+                    "constraints": [
+                        "FK",
+                        "NN"
+                    ],
+                    "references": {
+                        "table": "skill_categories",
+                        "column": "id"
+                    },
+                    "description": "Link to the skill category.",
+                    "indexed": true
+                },
+                {
+                    "name": "name",
+                    "type": "VARCHAR(100)",
+                    "constraints": [
+                        "NN"
+                    ],
+                    "description": "Name of the skill (e.g., Java, Spring Boot). Unique within a category assumed.",
+                    "indexed": true
+                },
+                {
+                    "name": "description",
+                    "type": "TEXT",
+                    "constraints": []
+                },
+                {
+                    "name": "created_at",
+                    "type": "TIMESTAMPTZ",
+                    "constraints": [
+                        "NN",
+                        "DEFAULT_NOW"
+                    ]
+                },
+                {
+                    "name": "updated_at",
+                    "type": "TIMESTAMPTZ",
+                    "constraints": [
+                        "NN",
+                        "DEFAULT_NOW"
+                    ]
+                }
+            ],
+            "constraints": [
+                {
+                    "type": "UQ",
+                    "columns": [
+                        "category_id",
+                        "name"
+                    ],
+                    "name": "uq_skill_category_name"
+                }
+            ],
+            "relationships": [
+                {
+                    "type": "many-to-one",
+                    "related_table": "skill_categories",
+                    "foreign_key": "category_id"
+                }
+            ]
+        },
+        "employee_skills": {
+            "description": "Junction table linking employees to skills, including experience and assessment levels.",
+            "columns": [
+                {
+                    "name": "id",
+                    "type": "BIGSERIAL",
+                    "constraints": [
+                        "PK"
+                    ]
+                },
+                {
+                    "name": "employee_id",
+                    "type": "BIGINT",
+                    "constraints": [
+                        "FK",
+                        "NN"
+                    ],
+                    "references": {
+                        "table": "employees",
+                        "column": "id"
+                    },
+                    "indexed": true
+                },
+                {
+                    "name": "skill_id",
+                    "type": "BIGINT",
+                    "constraints": [
+                        "FK",
+                        "NN"
+                    ],
+                    "references": {
+                        "table": "skills",
+                        "column": "id"
+                    },
+                    "indexed": true
+                },
+                {
+                    "name": "years_experience",
+                    "type": "DECIMAL(4,1)",
+                    "constraints": [],
+                    "description": "Years of experience with the skill."
+                },
+                {
+                    "name": "self_assessment_level",
+                    "type": "VARCHAR(50)",
+                    "constraints": [],
+                    "description": "Level assessed by employee (Basic, Intermediate, Advanced)."
+                },
+                {
+                    "name": "leader_assessment_level",
+                    "type": "VARCHAR(50)",
+                    "constraints": [],
+                    "description": "Level assessed by leader (Basic, Intermediate, Advanced)."
+                },
+                {
+                    "name": "created_at",
+                    "type": "TIMESTAMPTZ",
+                    "constraints": [
+                        "NN",
+                        "DEFAULT_NOW"
+                    ]
+                },
+                {
+                    "name": "updated_at",
+                    "type": "TIMESTAMPTZ",
+                    "constraints": [
+                        "NN",
+                        "DEFAULT_NOW"
+                    ]
+                }
+            ],
+            "constraints": [
+                {
+                    "type": "UQ",
+                    "columns": [
+                        "employee_id",
+                        "skill_id"
+                    ],
+                    "name": "uq_employee_skill"
+                }
+            ],
+            "relationships": [
+                {
+                    "type": "many-to-one",
+                    "related_table": "employees",
+                    "foreign_key": "employee_id"
+                },
+                {
+                    "type": "many-to-one",
+                    "related_table": "skills",
+                    "foreign_key": "skill_id"
+                }
+            ]
+        },
+        "project_history": {
+            "description": "Stores the history of projects an employee has worked on.",
+            "columns": [
+                {
+                    "name": "id",
+                    "type": "BIGSERIAL",
+                    "constraints": [
+                        "PK"
+                    ]
+                },
+                {
+                    "name": "employee_id",
+                    "type": "BIGINT",
+                    "constraints": [
+                        "FK",
+                        "NN"
+                    ],
+                    "references": {
+                        "table": "employees",
+                        "column": "id"
+                    },
+                    "indexed": true
+                },
+                {
+                    "name": "project_name",
+                    "type": "VARCHAR(255)",
+                    "constraints": [
+                        "NN"
+                    ],
+                    "indexed": true
+                },
+                {
+                    "name": "client_name",
+                    "type": "VARCHAR(255)",
+                    "constraints": []
+                },
+                {
+                    "name": "role",
+                    "type": "VARCHAR(100)",
+                    "constraints": [],
+                    "description": "Role played in the project."
+                },
+                {
+                    "name": "start_date",
+                    "type": "DATE",
+                    "constraints": []
+                },
+                {
+                    "name": "end_date",
+                    "type": "DATE",
+                    "constraints": []
+                },
+                {
+                    "name": "description",
+                    "type": "TEXT",
+                    "constraints": [],
+                    "description": "Brief description of work done."
+                },
+                {
+                    "name": "created_at",
+                    "type": "TIMESTAMPTZ",
+                    "constraints": [
+                        "NN",
+                        "DEFAULT_NOW"
+                    ]
+                },
+                {
+                    "name": "updated_at",
+                    "type": "TIMESTAMPTZ",
+                    "constraints": [
+                        "NN",
+                        "DEFAULT_NOW"
+                    ]
+                }
+            ],
+            "relationships": [
+                {
+                    "type": "many-to-one",
+                    "related_table": "employees",
+                    "foreign_key": "employee_id"
+                }
+            ]
+        },
+        "employee_status_log": {
+            "description": "Logs changes in employee status over time.",
+            "columns": [
+                {
+                    "name": "id",
+                    "type": "BIGSERIAL",
+                    "constraints": [
+                        "PK"
+                    ]
+                },
+                {
+                    "name": "employee_id",
+                    "type": "BIGINT",
+                    "constraints": [
+                        "FK",
+                        "NN"
+                    ],
+                    "references": {
+                        "table": "employees",
+                        "column": "id"
+                    },
+                    "indexed": true
+                },
+                {
+                    "name": "status",
+                    "type": "VARCHAR(50)",
+                    "constraints": [
+                        "NN"
+                    ],
+                    "description": "The status being logged.",
+                    "indexed": true
+                },
+                {
+                    "name": "project_name",
+                    "type": "VARCHAR(255)",
+                    "constraints": [],
+                    "description": "Project name if status is 'Allocated' or 'EndingSoon'."
+                },
+                {
+                    "name": "allocation_percentage",
+                    "type": "DECIMAL(5,2)",
+                    "constraints": [],
+                    "description": "Allocation percentage if applicable.",
+                    "check": "allocation_percentage BETWEEN 0 AND 100"
+                },
+                {
+                    "name": "expected_end_date",
+                    "type": "DATE",
+                    "constraints": [],
+                    "description": "Expected end date if status is 'EndingSoon'."
+                },
+                {
+                    "name": "log_timestamp",
+                    "type": "TIMESTAMPTZ",
+                    "constraints": [
+                        "NN",
+                        "DEFAULT_NOW"
+                    ],
+                    "description": "Timestamp when the status change occurred or was logged.",
+                    "indexed": true
+                },
+                {
+                    "name": "created_at",
+                    "type": "TIMESTAMPTZ",
+                    "constraints": [
+                        "NN",
+                        "DEFAULT_NOW"
+                    ]
+                },
+                {
+                    "name": "updated_at",
+                    "type": "TIMESTAMPTZ",
+                    "constraints": [
+                        "NN",
+                        "DEFAULT_NOW"
+                    ]
+                }
+            ],
+            "relationships": [
+                {
+                    "type": "many-to-one",
+                    "related_table": "employees",
+                    "foreign_key": "employee_id"
+                }
+            ]
+        },
+        "employee_costs": {
+            "description": "Stores monthly cost associated with each employee for margin calculation.",
+            "columns": [
+                {
+                    "name": "id",
+                    "type": "BIGSERIAL",
+                    "constraints": [
+                        "PK"
+                    ]
+                },
+                {
+                    "name": "employee_id",
+                    "type": "BIGINT",
+                    "constraints": [
+                        "FK",
+                        "NN"
+                    ],
+                    "references": {
+                        "table": "employees",
+                        "column": "id"
+                    },
+                    "indexed": true
+                },
+                {
+                    "name": "year",
+                    "type": "INTEGER",
+                    "constraints": [
+                        "NN"
+                    ],
+                    "indexed": true
+                },
+                {
+                    "name": "month",
+                    "type": "INTEGER",
+                    "constraints": [
+                        "NN"
+                    ],
+                    "check": "month BETWEEN 1 AND 12",
+                    "indexed": true
+                },
+                {
+                    "name": "cost_amount",
+                    "type": "DECIMAL(15,2)",
+                    "constraints": [
+                        "NN"
+                    ],
+                    "description": "Total cost for the employee in this month.",
+                    "sensitive": true
+                },
+                {
+                    "name": "currency",
+                    "type": "VARCHAR(3)",
+                    "constraints": [
+                        "NN"
+                    ],
+                    "description": "Currency of the cost amount (e.g., VND, USD)."
+                },
+                {
+                    "name": "description",
+                    "type": "TEXT",
+                    "constraints": [],
+                    "description": "Optional notes about the cost calculation."
+                },
+                {
+                    "name": "created_at",
+                    "type": "TIMESTAMPTZ",
+                    "constraints": [
+                        "NN",
+                        "DEFAULT_NOW"
+                    ]
+                },
+                {
+                    "name": "updated_at",
+                    "type": "TIMESTAMPTZ",
+                    "constraints": [
+                        "NN",
+                        "DEFAULT_NOW"
+                    ]
+                }
+            ],
+            "constraints": [
+                {
+                    "type": "UQ",
+                    "columns": [
+                        "employee_id",
+                        "year",
+                        "month"
+                    ],
+                    "name": "uq_employee_cost_period"
+                }
+            ],
+            "relationships": [
+                {
+                    "type": "many-to-one",
+                    "related_table": "employees",
+                    "foreign_key": "employee_id"
+                }
+            ]
+        },
+        "employee_revenues": {
+            "description": "Stores calculated monthly revenue generated by each employee per contract.",
+            "columns": [
+                {
+                    "name": "id",
+                    "type": "BIGSERIAL",
+                    "constraints": [
+                        "PK"
+                    ]
+                },
+                {
+                    "name": "employee_id",
+                    "type": "BIGINT",
+                    "constraints": [
+                        "FK",
+                        "NN"
+                    ],
+                    "references": {
+                        "table": "employees",
+                        "column": "id"
+                    },
+                    "indexed": true
+                },
+                {
+                    "name": "contract_id",
+                    "type": "BIGINT",
+                    "constraints": [
+                        "FK",
+                        "NN"
+                    ],
+                    "references": {
+                        "table": "contracts",
+                        "column": "id"
+                    },
+                    "indexed": true
+                },
+                {
+                    "name": "year",
+                    "type": "INTEGER",
+                    "constraints": [
+                        "NN"
+                    ],
+                    "indexed": true
+                },
+                {
+                    "name": "month",
+                    "type": "INTEGER",
+                    "constraints": [
+                        "NN"
+                    ],
+                    "check": "month BETWEEN 1 AND 12",
+                    "indexed": true
+                },
+                {
+                    "name": "billing_rate",
+                    "type": "DECIMAL(15,2)",
+                    "constraints": [],
+                    "description": "Billing rate used for calculation (if applicable, e.g., T&M)."
+                },
+                {
+                    "name": "allocation_percentage",
+                    "type": "DECIMAL(5,2)",
+                    "constraints": [],
+                    "description": "Percentage allocated to this contract in this month.",
+                    "check": "allocation_percentage BETWEEN 0 AND 100"
+                },
+                {
+                    "name": "calculated_revenue",
+                    "type": "DECIMAL(15,2)",
+                    "constraints": [
+                        "NN"
+                    ],
+                    "description": "Revenue amount calculated for this employee, contract, and month."
+                },
+                {
+                    "name": "currency",
+                    "type": "VARCHAR(3)",
+                    "constraints": [
+                        "NN"
+                    ],
+                    "description": "Currency of the revenue amount.",
+                    "indexed": true
+                },
+                {
+                    "name": "created_at",
+                    "type": "TIMESTAMPTZ",
+                    "constraints": [
+                        "NN",
+                        "DEFAULT_NOW"
+                    ]
+                },
+                {
+                    "name": "updated_at",
+                    "type": "TIMESTAMPTZ",
+                    "constraints": [
+                        "NN",
+                        "DEFAULT_NOW"
+                    ]
+                }
+            ],
+            "constraints": [
+                {
+                    "type": "UQ",
+                    "columns": [
+                        "employee_id",
+                        "contract_id",
+                        "year",
+                        "month"
+                    ],
+                    "name": "uq_employee_revenue_period"
+                }
+            ],
+            "relationships": [
+                {
+                    "type": "many-to-one",
+                    "related_table": "employees",
+                    "foreign_key": "employee_id"
+                },
+                {
+                    "type": "many-to-one",
+                    "related_table": "contracts",
+                    "foreign_key": "contract_id"
+                }
+            ]
+        },
+        "opportunities": {
+            "description": "Stores opportunities, potentially synced from Hubspot.",
+            "columns": [
+                {
+                    "name": "id",
+                    "type": "BIGSERIAL",
+                    "constraints": [
+                        "PK"
+                    ]
+                },
+                {
+                    "name": "hubspot_id",
+                    "type": "VARCHAR(255)",
+                    "constraints": [
+                        "UQ"
+                    ],
+                    "description": "ID from Hubspot, if synced.",
+                    "indexed": true
+                },
+                {
+                    "name": "name",
+                    "type": "VARCHAR(255)",
+                    "constraints": [
+                        "NN"
+                    ],
+                    "description": "Name of the opportunity.",
+                    "indexed": true
+                },
+                {
+                    "name": "client_name",
+                    "type": "VARCHAR(255)",
+                    "constraints": [],
+                    "indexed": true
+                },
+                {
+                    "name": "estimated_value",
+                    "type": "DECIMAL(18,2)",
+                    "constraints": [],
+                    "description": "Estimated deal value."
+                },
+                {
+                    "name": "currency",
+                    "type": "VARCHAR(3)",
+                    "constraints": [],
+                    "description": "Currency of the estimated value."
+                },
+                {
+                    "name": "deal_stage",
+                    "type": "VARCHAR(100)",
+                    "constraints": [],
+                    "description": "Current stage in the sales pipeline.",
+                    "indexed": true
+                },
+                {
+                    "name": "source",
+                    "type": "VARCHAR(100)",
+                    "constraints": [
+                        "DEFAULT_HUBSPOT"
+                    ],
+                    "description": "Origin of the opportunity (e.g., Hubspot, Manual)."
+                },
+                {
+                    "name": "assigned_sales_id",
+                    "type": "BIGINT",
+                    "constraints": [
+                        "FK"
+                    ],
+                    "references": {
+                        "table": "users",
+                        "column": "id"
+                    },
+                    "description": "Sales user responsible for the opportunity.",
+                    "indexed": true
+                },
+                {
+                    "name": "last_interaction_date",
+                    "type": "TIMESTAMPTZ",
+                    "constraints": [],
+                    "description": "Timestamp of the last logged interaction.",
+                    "indexed": true
+                },
+                {
+                    "name": "follow_up_status",
+                    "type": "VARCHAR(50)",
+                    "constraints": [],
+                    "description": "Follow-up status indicator (Red, Yellow, Green).",
+                    "indexed": true
+                },
+                {
+                    "name": "onsite_priority",
+                    "type": "BOOLEAN",
+                    "constraints": [
+                        "DEFAULT_FALSE"
+                    ],
+                    "description": "Flag indicating if onsite resources are preferred.",
+                    "indexed": true
+                },
+                {
+                    "name": "hubspot_created_at",
+                    "type": "TIMESTAMPTZ",
+                    "constraints": [],
+                    "description": "Original creation timestamp from Hubspot.",
+                    "indexed": true
+                },
+                {
+                    "name": "hubspot_last_updated_at",
+                    "type": "TIMESTAMPTZ",
+                    "constraints": [],
+                    "description": "Last update timestamp from Hubspot.",
+                    "indexed": true
+                },
+                {
+                    "name": "sync_status",
+                    "type": "VARCHAR(50)",
+                    "constraints": [],
+                    "description": "Status of the last sync attempt (Success, Failed, Pending).",
+                    "indexed": true
+                },
+                {
+                    "name": "last_sync_at",
+                    "type": "TIMESTAMPTZ",
+                    "constraints": [],
+                    "description": "Timestamp of the last successful sync.",
+                    "indexed": true
+                },
+                {
+                    "name": "created_at",
+                    "type": "TIMESTAMPTZ",
+                    "constraints": [
+                        "NN",
+                        "DEFAULT_NOW"
+                    ]
+                },
+                {
+                    "name": "updated_at",
+                    "type": "TIMESTAMPTZ",
+                    "constraints": [
+                        "NN",
+                        "DEFAULT_NOW"
+                    ]
+                }
+            ],
+            "relationships": [
+                {
+                    "type": "many-to-one",
+                    "related_table": "users",
+                    "foreign_key": "assigned_sales_id"
+                }
+            ]
+        },
+        "opportunity_assignments": {
+            "description": "Links Leaders (users) to opportunities they are assigned to follow.",
+            "columns": [
+                {
+                    "name": "id",
+                    "type": "BIGSERIAL",
+                    "constraints": [
+                        "PK"
+                    ]
+                },
+                {
+                    "name": "opportunity_id",
+                    "type": "BIGINT",
+                    "constraints": [
+                        "FK",
+                        "NN"
+                    ],
+                    "references": {
+                        "table": "opportunities",
+                        "column": "id"
+                    },
+                    "indexed": true
+                },
+                {
+                    "name": "leader_id",
+                    "type": "BIGINT",
+                    "constraints": [
+                        "FK",
+                        "NN"
+                    ],
+                    "references": {
+                        "table": "users",
+                        "column": "id"
+                    },
+                    "description": "User ID of the assigned Leader.",
+                    "indexed": true
+                },
+                {
+                    "name": "assigned_at",
+                    "type": "TIMESTAMPTZ",
+                    "constraints": [
+                        "NN",
+                        "DEFAULT_NOW"
+                    ],
+                    "description": "Timestamp when the assignment was made."
+                },
+                {
+                    "name": "created_at",
+                    "type": "TIMESTAMPTZ",
+                    "constraints": [
+                        "NN",
+                        "DEFAULT_NOW"
+                    ]
+                },
+                {
+                    "name": "updated_at",
+                    "type": "TIMESTAMPTZ",
+                    "constraints": [
+                        "NN",
+                        "DEFAULT_NOW"
+                    ]
+                }
+            ],
+            "constraints": [
+                {
+                    "type": "UQ",
+                    "columns": [
+                        "opportunity_id",
+                        "leader_id"
+                    ],
+                    "name": "uq_opportunity_leader_assignment"
+                }
+            ],
+            "relationships": [
+                {
+                    "type": "many-to-one",
+                    "related_table": "opportunities",
+                    "foreign_key": "opportunity_id"
+                },
+                {
+                    "type": "many-to-one",
+                    "related_table": "users",
+                    "foreign_key": "leader_id"
+                }
+            ]
+        },
+        "opportunity_notes": {
+            "description": "Stores notes and interaction logs related to opportunities.",
+            "columns": [
+                {
+                    "name": "id",
+                    "type": "BIGSERIAL",
+                    "constraints": [
+                        "PK"
+                    ]
+                },
+                {
+                    "name": "opportunity_id",
+                    "type": "BIGINT",
+                    "constraints": [
+                        "FK",
+                        "NN"
+                    ],
+                    "references": {
+                        "table": "opportunities",
+                        "column": "id"
+                    },
+                    "indexed": true
+                },
+                {
+                    "name": "author_id",
+                    "type": "BIGINT",
+                    "constraints": [
+                        "FK",
+                        "NN"
+                    ],
+                    "references": {
+                        "table": "users",
+                        "column": "id"
+                    },
+                    "description": "User who created the note.",
+                    "indexed": true
+                },
+                {
+                    "name": "note_content",
+                    "type": "TEXT",
+                    "constraints": [
+                        "NN"
+                    ],
+                    "description": "Content of the note or log entry."
+                },
+                {
+                    "name": "created_at",
+                    "type": "TIMESTAMPTZ",
+                    "constraints": [
+                        "NN",
+                        "DEFAULT_NOW"
+                    ],
+                    "indexed": true
+                },
+                {
+                    "name": "updated_at",
+                    "type": "TIMESTAMPTZ",
+                    "constraints": [
+                        "NN",
+                        "DEFAULT_NOW"
+                    ]
+                }
+            ],
+            "relationships": [
+                {
+                    "type": "many-to-one",
+                    "related_table": "opportunities",
+                    "foreign_key": "opportunity_id"
+                },
+                {
+                    "type": "many-to-one",
+                    "related_table": "users",
+                    "foreign_key": "author_id"
+                }
+            ]
+        },
+        "contracts": {
+            "description": "Stores information about client contracts.",
+            "columns": [
+                {
+                    "name": "id",
+                    "type": "BIGSERIAL",
+                    "constraints": [
+                        "PK"
+                    ]
+                },
+                {
+                    "name": "contract_code",
+                    "type": "VARCHAR(100)",
+                    "constraints": [
+                        "UQ",
+                        "NN"
+                    ],
+                    "description": "Unique code identifying the contract.",
+                    "indexed": true
+                },
+                {
+                    "name": "name",
+                    "type": "VARCHAR(255)",
+                    "constraints": [
+                        "NN"
+                    ],
+                    "description": "Name of the contract or project.",
+                    "indexed": true
+                },
+                {
+                    "name": "client_name",
+                    "type": "VARCHAR(255)",
+                    "constraints": [
+                        "NN"
+                    ],
+                    "indexed": true
+                },
+                {
+                    "name": "opportunity_id",
+                    "type": "BIGINT",
+                    "constraints": [
+                        "FK"
+                    ],
+                    "references": {
+                        "table": "opportunities",
+                        "column": "id"
+                    },
+                    "description": "Link to the originating opportunity (optional).",
+                    "indexed": true
+                },
+                {
+                    "name": "sign_date",
+                    "type": "DATE",
+                    "constraints": []
+                },
+                {
+                    "name": "effective_date",
+                    "type": "DATE",
+                    "constraints": [],
+                    "indexed": true
+                },
+                {
+                    "name": "expiry_date",
+                    "type": "DATE",
+                    "constraints": [],
+                    "indexed": true
+                },
+                {
+                    "name": "total_value",
+                    "type": "DECIMAL(18,2)",
+                    "constraints": [],
+                    "description": "Total value of the contract."
+                },
+                {
+                    "name": "currency",
+                    "type": "VARCHAR(3)",
+                    "constraints": [],
+                    "description": "Currency of the contract value."
+                },
+                {
+                    "name": "contract_type",
+                    "type": "VARCHAR(50)",
+                    "constraints": [],
+                    "description": "Type of contract (FixedPrice, TM).",
+                    "indexed": true
+                },
+                {
+                    "name": "assigned_sales_id",
+                    "type": "BIGINT",
+                    "constraints": [
+                        "FK"
+                    ],
+                    "references": {
+                        "table": "users",
+                        "column": "id"
+                    },
+                    "description": "Sales user responsible for the contract.",
+                    "indexed": true
+                },
+                {
+                    "name": "status",
+                    "type": "VARCHAR(50)",
+                    "constraints": [],
+                    "description": "Current status of the contract (New, Ongoing, Paused, Completed, Cancelled).",
+                    "indexed": true
+                },
+                {
+                    "name": "description",
+                    "type": "TEXT",
+                    "constraints": []
+                },
+                {
+                    "name": "created_at",
+                    "type": "TIMESTAMPTZ",
+                    "constraints": [
+                        "NN",
+                        "DEFAULT_NOW"
+                    ]
+                },
+                {
+                    "name": "updated_at",
+                    "type": "TIMESTAMPTZ",
+                    "constraints": [
+                        "NN",
+                        "DEFAULT_NOW"
+                    ]
+                },
+                {
+                    "name": "created_by",
+                    "type": "BIGINT",
+                    "constraints": [
+                        "FK"
+                    ],
+                    "references": {
+                        "table": "users",
+                        "column": "id"
+                    },
+                    "indexed": true
+                },
+                {
+                    "name": "updated_by",
+                    "type": "BIGINT",
+                    "constraints": [
+                        "FK"
+                    ],
+                    "references": {
+                        "table": "users",
+                        "column": "id"
+                    },
+                    "indexed": true
+                },
+                {
+                    "name": "deleted_at",
+                    "type": "TIMESTAMPTZ",
+                    "constraints": [],
+                    "description": "Timestamp for soft delete.",
+                    "indexed": true
+                }
+            ],
+            "relationships": [
+                {
+                    "type": "many-to-one",
+                    "related_table": "opportunities",
+                    "foreign_key": "opportunity_id"
+                },
+                {
+                    "type": "many-to-one",
+                    "related_table": "users",
+                    "foreign_key": "assigned_sales_id"
+                },
+                {
+                    "type": "many-to-one",
+                    "related_table": "users",
+                    "foreign_key": "created_by"
+                },
+                {
+                    "type": "many-to-one",
+                    "related_table": "users",
+                    "foreign_key": "updated_by"
+                }
+            ]
+        },
+        "contract_payment_terms": {
+            "description": "Stores payment milestones and statuses for each contract.",
+            "columns": [
+                {
+                    "name": "id",
+                    "type": "BIGSERIAL",
+                    "constraints": [
+                        "PK"
+                    ]
+                },
+                {
+                    "name": "contract_id",
+                    "type": "BIGINT",
+                    "constraints": [
+                        "FK",
+                        "NN"
+                    ],
+                    "references": {
+                        "table": "contracts",
+                        "column": "id"
+                    },
+                    "indexed": true
+                },
+                {
+                    "name": "description",
+                    "type": "VARCHAR(255)",
+                    "constraints": [
+                        "NN"
+                    ],
+                    "description": "Description of the payment milestone.",
+                    "indexed": true
+                },
+                {
+                    "name": "expected_payment_date",
+                    "type": "DATE",
+                    "constraints": [
+                        "NN"
+                    ],
+                    "description": "Date payment is expected.",
+                    "indexed": true
+                },
+                {
+                    "name": "expected_amount",
+                    "type": "DECIMAL(15,2)",
+                    "constraints": [
+                        "NN"
+                    ],
+                    "description": "Amount expected for this milestone."
+                },
+                {
+                    "name": "currency",
+                    "type": "VARCHAR(3)",
+                    "constraints": [
+                        "NN"
+                    ],
+                    "description": "Currency of the expected amount."
+                },
+                {
+                    "name": "payment_status",
+                    "type": "VARCHAR(50)",
+                    "constraints": [
+                        "NN",
+                        "DEFAULT_PENDING"
+                    ],
+                    "description": "Payment status (Pending, Paid, Overdue).",
+                    "indexed": true
+                },
+                {
+                    "name": "actual_payment_date",
+                    "type": "DATE",
+                    "constraints": [],
+                    "description": "Date payment was actually received.",
+                    "indexed": true
+                },
+                {
+                    "name": "actual_amount_paid",
+                    "type": "DECIMAL(15,2)",
+                    "constraints": [],
+                    "description": "Amount actually received."
+                },
+                {
+                    "name": "notes",
+                    "type": "TEXT",
+                    "constraints": [],
+                    "description": "Notes related to this payment term."
+                },
+                {
+                    "name": "created_at",
+                    "type": "TIMESTAMPTZ",
+                    "constraints": [
+                        "NN",
+                        "DEFAULT_NOW"
+                    ]
+                },
+                {
+                    "name": "updated_at",
+                    "type": "TIMESTAMPTZ",
+                    "constraints": [
+                        "NN",
+                        "DEFAULT_NOW"
+                    ]
+                },
+                {
+                    "name": "created_by",
+                    "type": "BIGINT",
+                    "constraints": [
+                        "FK"
+                    ],
+                    "references": {
+                        "table": "users",
+                        "column": "id"
+                    },
+                    "indexed": true
+                },
+                {
+                    "name": "updated_by",
+                    "type": "BIGINT",
+                    "constraints": [
+                        "FK"
+                    ],
+                    "references": {
+                        "table": "users",
+                        "column": "id"
+                    },
+                    "indexed": true
+                }
+            ],
+            "relationships": [
+                {
+                    "type": "many-to-one",
+                    "related_table": "contracts",
+                    "foreign_key": "contract_id"
+                },
+                {
+                    "type": "many-to-one",
+                    "related_table": "users",
+                    "foreign_key": "created_by"
+                },
+                {
+                    "type": "many-to-one",
+                    "related_table": "users",
+                    "foreign_key": "updated_by"
+                }
+            ]
+        },
+        "contract_employees": {
+            "description": "Junction table linking employees to contracts they are working on.",
+            "columns": [
+                {
+                    "name": "id",
+                    "type": "BIGSERIAL",
+                    "constraints": [
+                        "PK"
+                    ]
+                },
+                {
+                    "name": "contract_id",
+                    "type": "BIGINT",
+                    "constraints": [
+                        "FK",
+                        "NN"
+                    ],
+                    "references": {
+                        "table": "contracts",
+                        "column": "id"
+                    },
+                    "indexed": true
+                },
+                {
+                    "name": "employee_id",
+                    "type": "BIGINT",
+                    "constraints": [
+                        "FK",
+                        "NN"
+                    ],
+                    "references": {
+                        "table": "employees",
+                        "column": "id"
+                    },
+                    "indexed": true
+                },
+                {
+                    "name": "role",
+                    "type": "VARCHAR(100)",
+                    "constraints": [],
+                    "description": "Role within the contract/project."
+                },
+                {
+                    "name": "allocation_percentage",
+                    "type": "DECIMAL(5,2)",
+                    "constraints": [],
+                    "description": "Percentage of time allocated to this contract.",
+                    "check": "allocation_percentage BETWEEN 0 AND 100"
+                },
+                {
+                    "name": "start_date",
+                    "type": "DATE",
+                    "constraints": [],
+                    "description": "Start date of involvement in the contract."
+                },
+                {
+                    "name": "end_date",
+                    "type": "DATE",
+                    "constraints": [],
+                    "description": "End date of involvement in the contract."
+                },
+                {
+                    "name": "created_at",
+                    "type": "TIMESTAMPTZ",
+                    "constraints": [
+                        "NN",
+                        "DEFAULT_NOW"
+                    ]
+                },
+                {
+                    "name": "updated_at",
+                    "type": "TIMESTAMPTZ",
+                    "constraints": [
+                        "NN",
+                        "DEFAULT_NOW"
+                    ]
+                }
+            ],
+            "constraints": [
+                {
+                    "type": "UQ",
+                    "columns": [
+                        "contract_id",
+                        "employee_id"
+                    ],
+                    "name": "uq_contract_employee_assignment"
+                }
+            ],
+            "relationships": [
+                {
+                    "type": "many-to-one",
+                    "related_table": "contracts",
+                    "foreign_key": "contract_id"
+                },
+                {
+                    "type": "many-to-one",
+                    "related_table": "employees",
+                    "foreign_key": "employee_id"
+                }
+            ]
+        },
+        "contract_files": {
+            "description": "Stores metadata about files attached to contracts.",
+            "columns": [
+                {
+                    "name": "id",
+                    "type": "BIGSERIAL",
+                    "constraints": [
+                        "PK"
+                    ]
+                },
+                {
+                    "name": "contract_id",
+                    "type": "BIGINT",
+                    "constraints": [
+                        "FK",
+                        "NN"
+                    ],
+                    "references": {
+                        "table": "contracts",
+                        "column": "id"
+                    },
+                    "indexed": true
+                },
+                {
+                    "name": "file_name",
+                    "type": "VARCHAR(255)",
+                    "constraints": [
+                        "NN"
+                    ],
+                    "description": "Original name of the uploaded file."
+                },
+                {
+                    "name": "file_path",
+                    "type": "VARCHAR(500)",
+                    "constraints": [
+                        "NN"
+                    ],
+                    "description": "Path or key to the stored file (e.g., in S3 or local storage)."
+                },
+                {
+                    "name": "file_type",
+                    "type": "VARCHAR(100)",
+                    "constraints": [],
+                    "description": "MIME type of the file."
+                },
+                {
+                    "name": "file_size",
+                    "type": "BIGINT",
+                    "constraints": [],
+                    "description": "Size of the file in bytes."
+                },
+                {
+                    "name": "uploaded_by_id",
+                    "type": "BIGINT",
+                    "constraints": [
+                        "FK",
+                        "NN"
+                    ],
+                    "references": {
+                        "table": "users",
+                        "column": "id"
+                    },
+                    "description": "User who uploaded the file.",
+                    "indexed": true
+                },
+                {
+                    "name": "uploaded_at",
+                    "type": "TIMESTAMPTZ",
+                    "constraints": [
+                        "NN",
+                        "DEFAULT_NOW"
+                    ],
+                    "description": "Timestamp when the file was uploaded.",
+                    "indexed": true
+                },
+                {
+                    "name": "created_at",
+                    "type": "TIMESTAMPTZ",
+                    "constraints": [
+                        "NN",
+                        "DEFAULT_NOW"
+                    ]
+                },
+                {
+                    "name": "updated_at",
+                    "type": "TIMESTAMPTZ",
+                    "constraints": [
+                        "NN",
+                        "DEFAULT_NOW"
+                    ]
+                }
+            ],
+            "relationships": [
+                {
+                    "type": "many-to-one",
+                    "related_table": "contracts",
+                    "foreign_key": "contract_id"
+                },
+                {
+                    "type": "many-to-one",
+                    "related_table": "users",
+                    "foreign_key": "uploaded_by_id"
+                }
+            ]
+        },
+        "sales_kpis": {
+            "description": "Stores target revenue KPIs for sales users per period.",
+            "columns": [
+                {
+                    "name": "id",
+                    "type": "BIGSERIAL",
+                    "constraints": [
+                        "PK"
+                    ]
+                },
+                {
+                    "name": "sales_user_id",
+                    "type": "BIGINT",
+                    "constraints": [
+                        "FK",
+                        "NN"
+                    ],
+                    "references": {
+                        "table": "users",
+                        "column": "id"
+                    },
+                    "description": "User ID of the sales person.",
+                    "indexed": true
+                },
+                {
+                    "name": "year",
+                    "type": "INTEGER",
+                    "constraints": [
+                        "NN"
+                    ],
+                    "description": "Year of the KPI period.",
+                    "indexed": true
+                },
+                {
+                    "name": "quarter",
+                    "type": "INTEGER",
+                    "constraints": [],
+                    "check": "quarter BETWEEN 1 AND 4",
+                    "description": "Quarter of the KPI period (optional).",
+                    "indexed": true
+                },
+                {
+                    "name": "month",
+                    "type": "INTEGER",
+                    "constraints": [],
+                    "check": "month BETWEEN 1 AND 12",
+                    "description": "Month of the KPI period (optional).",
+                    "indexed": true
+                },
+                {
+                    "name": "target_revenue",
+                    "type": "DECIMAL(18,2)",
+                    "constraints": [
+                        "NN"
+                    ],
+                    "description": "Target revenue amount for the period."
+                },
+                {
+                    "name": "currency",
+                    "type": "VARCHAR(3)",
+                    "constraints": [
+                        "NN"
+                    ],
+                    "description": "Currency of the target revenue."
+                },
+                {
+                    "name": "created_at",
+                    "type": "TIMESTAMPTZ",
+                    "constraints": [
+                        "NN",
+                        "DEFAULT_NOW"
+                    ]
+                },
+                {
+                    "name": "updated_at",
+                    "type": "TIMESTAMPTZ",
+                    "constraints": [
+                        "NN",
+                        "DEFAULT_NOW"
+                    ]
+                },
+                {
+                    "name": "created_by",
+                    "type": "BIGINT",
+                    "constraints": [
+                        "FK"
+                    ],
+                    "references": {
+                        "table": "users",
+                        "column": "id"
+                    },
+                    "indexed": true
+                },
+                {
+                    "name": "updated_by",
+                    "type": "BIGINT",
+                    "constraints": [
+                        "FK"
+                    ],
+                    "references": {
+                        "table": "users",
+                        "column": "id"
+                    },
+                    "indexed": true
+                }
+            ],
+            "constraints": [
+                {
+                    "type": "UQ",
+                    "columns": [
+                        "sales_user_id",
+                        "year",
+                        "quarter",
+                        "month"
+                    ],
+                    "name": "uq_sales_kpi_period"
+                }
+            ],
+            "relationships": [
+                {
+                    "type": "many-to-one",
+                    "related_table": "users",
+                    "foreign_key": "sales_user_id"
+                },
+                {
+                    "type": "many-to-one",
+                    "related_table": "users",
+                    "foreign_key": "created_by"
+                },
+                {
+                    "type": "many-to-one",
+                    "related_table": "users",
+                    "foreign_key": "updated_by"
+                }
+            ]
+        },
+        "system_configs": {
+            "description": "Stores system-wide configuration parameters.",
+            "columns": [
+                {
+                    "name": "id",
+                    "type": "BIGSERIAL",
+                    "constraints": [
+                        "PK"
+                    ]
+                },
+                {
+                    "name": "config_key",
+                    "type": "VARCHAR(100)",
+                    "constraints": [
+                        "UQ",
+                        "NN"
+                    ],
+                    "description": "Unique key identifying the configuration parameter.",
+                    "indexed": true
+                },
+                {
+                    "name": "config_value",
+                    "type": "TEXT",
+                    "constraints": [
+                        "NN"
+                    ],
+                    "description": "Value of the configuration parameter."
+                },
+                {
+                    "name": "description",
+                    "type": "TEXT",
+                    "constraints": [],
+                    "description": "Description of the parameter's purpose."
+                },
+                {
+                    "name": "created_at",
+                    "type": "TIMESTAMPTZ",
+                    "constraints": [
+                        "NN",
+                        "DEFAULT_NOW"
+                    ]
+                },
+                {
+                    "name": "updated_at",
+                    "type": "TIMESTAMPTZ",
+                    "constraints": [
+                        "NN",
+                        "DEFAULT_NOW"
+                    ]
+                }
+            ],
+            "relationships": []
+        },
+        "notifications": {
+            "description": "Stores system-generated notifications for users.",
+            "columns": [
+                {
+                    "name": "id",
+                    "type": "BIGSERIAL",
+                    "constraints": [
+                        "PK"
+                    ]
+                },
+                {
+                    "name": "user_id",
+                    "type": "BIGINT",
+                    "constraints": [
+                        "FK",
+                        "NN"
+                    ],
+                    "references": {
+                        "table": "users",
+                        "column": "id"
+                    },
+                    "description": "User receiving the notification.",
+                    "indexed": true
+                },
+                {
+                    "name": "message",
+                    "type": "TEXT",
+                    "constraints": [
+                        "NN"
+                    ],
+                    "description": "Content of the notification."
+                },
+                {
+                    "name": "is_read",
+                    "type": "BOOLEAN",
+                    "constraints": [
+                        "NN",
+                        "DEFAULT_FALSE"
+                    ],
+                    "description": "Flag indicating if the user has read the notification.",
+                    "indexed": true
+                },
+                {
+                    "name": "related_entity_type",
+                    "type": "VARCHAR(100)",
+                    "constraints": [],
+                    "description": "Type of entity the notification relates to (e.g., Contract, Opportunity).",
+                    "indexed": true
+                },
+                {
+                    "name": "related_entity_id",
+                    "type": "BIGINT",
+                    "constraints": [],
+                    "description": "ID of the related entity.",
+                    "indexed": true
+                },
+                {
+                    "name": "created_at",
+                    "type": "TIMESTAMPTZ",
+                    "constraints": [
+                        "NN",
+                        "DEFAULT_NOW"
+                    ],
+                    "indexed": true
+                },
+                {
+                    "name": "updated_at",
+                    "type": "TIMESTAMPTZ",
+                    "constraints": [
+                        "NN",
+                        "DEFAULT_NOW"
+                    ]
+                }
+            ],
+            "relationships": [
+                {
+                    "type": "many-to-one",
+                    "related_table": "users",
+                    "foreign_key": "user_id"
+                }
+            ]
+        }
+    }
+}

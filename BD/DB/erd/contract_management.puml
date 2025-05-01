@@ -1,0 +1,200 @@
+@startuml Contract & Revenue Management Module
+
+!define table(x) class x << (T,#FFAAAA) >>
+
+hide empty members
+skinparam classAttributeIconSize 0
+
+' Referenced Tables
+table(Users) {
+    id
+    username
+}
+table(Employees) {
+    id
+    employeeCode
+}
+
+package "Opportunity Management" {
+    table(Opportunities) {
+        id
+        hubspotId
+        name
+        clientName
+        estimatedValue
+        currency
+        dealStage
+        source
+        assignedSalesId
+        lastInteractionDate
+        followUpStatus
+        onsitePriority
+        hubspotCreatedAt
+        hubspotLastUpdatedAt
+        syncStatus
+        lastSyncAt
+        createdAt
+        updatedAt
+    }
+
+    table(OpportunityAssignments) {
+        id
+        opportunityId
+        leaderId
+        assignedAt
+        createdAt
+        updatedAt
+    }
+    note right of OpportunityAssignments
+        UNIQUE constraint on (opportunityId, leaderId)
+    end note
+
+    table(OpportunityNotes) {
+        id
+        opportunityId
+        authorId
+        noteContent
+        createdAt
+        updatedAt
+    }
+}
+
+package "Contract & Revenue Management" {
+     table(Contracts) {
+        id
+        contractCode
+        name
+        clientName
+        opportunityId
+        signDate
+        effectiveDate
+        expiryDate
+        totalValue
+        currency
+        contractType
+        assignedSalesId
+        status
+        description
+        createdAt
+        updatedAt
+        createdBy
+        updatedBy
+        deletedAt
+    }
+
+    table(ContractPaymentTerms) {
+        id
+        contractId
+        description
+        expectedPaymentDate
+        expectedAmount
+        currency
+        paymentStatus
+        actualPaymentDate
+        actualAmountPaid
+        notes
+        createdAt
+        updatedAt
+        createdBy
+        updatedBy
+    }
+
+     table(ContractEmployees) {
+        id
+        contractId
+        employeeId
+        role
+        allocationPercentage
+        startDate
+        endDate
+        createdAt
+        updatedAt
+    }
+    note right of ContractEmployees
+        UNIQUE constraint on (contractId, employeeId)
+    end note
+
+     table(ContractFiles) {
+        id
+        contractId
+        fileName
+        filePath
+        fileType
+        fileSize
+        uploadedById
+        uploadedAt
+        createdAt
+        updatedAt
+    }
+
+    table(SalesKpis) {
+        id
+        salesUserId
+        year
+        quarter
+        month
+        targetRevenue
+        currency
+        createdAt
+        updatedAt
+        createdBy
+        updatedBy
+    }
+    note right of SalesKpis
+        UNIQUE constraint on (salesUserId, year, quarter, month)
+    end note
+}
+
+package "Margin & Performance" { 
+    ' Included as it relates to EmployeeRevenues
+    table(EmployeeRevenues) {
+        id
+        employeeId
+        contractId
+        year
+        month
+        billingRate
+        allocationPercentage
+        calculatedRevenue
+        currency
+        createdAt
+        updatedAt
+    }
+    note right of EmployeeRevenues
+        UNIQUE constraint on (employeeId, contractId, year, month)
+    end note
+}
+
+
+' Relationships within and across related modules
+
+' Opportunity Relationships
+Users "1" -- "0..*" Opportunities : owns >
+Opportunities "1" -- "0..*" OpportunityAssignments : assigns to >
+Users "1" -- "0..*" OpportunityAssignments : assigned <
+Opportunities "1" -- "0..*" OpportunityNotes : has >
+Users "1" -- "0..*" OpportunityNotes : authored <
+
+' Contract Relationships
+Users "1" -- "0..*" Contracts : manages >
+Opportunities "0..1" -- "0..*" Contracts : leads to >
+Contracts "1" -- "0..*" ContractPaymentTerms : has >
+Contracts "1" -- "0..*" ContractEmployees : involves >
+Employees "1" -- "0..*" ContractEmployees : involved in <
+Contracts "1" -- "0..*" ContractFiles : has >
+Users "1" -- "0..*" ContractFiles : uploaded <
+
+' Sales KPI Relationships
+Users "1" -- "0..*" SalesKpis : has KPI for <
+Users "1" -- "0..*" SalesKpis : created by <
+Users "1" -- "0..*" SalesKpis : updated by <
+
+' Contract Payment Terms Audit
+Users "1" -- "0..*" ContractPaymentTerms : created by <
+Users "1" -- "0..*" ContractPaymentTerms : updated by <
+
+' Employee Revenue Relationships
+Employees "1" -- "0..*" EmployeeRevenues : generates >
+Contracts "1" -- "0..*" EmployeeRevenues : revenue from <
+
+@enduml 

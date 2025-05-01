@@ -1,0 +1,39 @@
+@startuml System Utilities Module
+
+!define table(x) class x << (T,#FFAAAA) >>
+
+hide empty members
+skinparam classAttributeIconSize 0
+
+' Referenced Table from Authentication
+table(Users) {
+    id
+    username
+}
+
+package "System & Utilities" {
+    table(SystemConfigs) {
+        id
+        configKey
+        configValue
+        description
+        createdAt
+        updatedAt
+    }
+
+    table(Notifications) {
+        id
+        userId
+        message
+        isRead
+        relatedEntityType
+        relatedEntityId
+        createdAt
+        updatedAt
+    }
+}
+
+' Relationships
+Users "1" -- "0..*" Notifications : receives >
+
+@enduml 
