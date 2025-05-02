@@ -19,6 +19,7 @@
 | API-AUTH-001  | POST   | `/api/v1/auth/login`          | Xác thực người dùng và trả về token (JWT).       | MH-AUTH-01         | -                  | Cao        | [Chi tiết](../../DD/API/API-AUTH-001.md) |
 | API-AUTH-002  | POST   | `/api/v1/auth/logout`         | Hủy token phía server.                           | Mọi màn hình       | -                  | Cao        | [Chi tiết](../../DD/API/API-AUTH-002.md) |
 | API-AUTH-003  | GET    | `/api/v1/auth/me`             | Lấy thông tin user và quyền của người dùng hiện tại. | Mọi màn hình       | F-1.2, F-6.2       | Cao        | [Chi tiết](../../DD/API/API-AUTH-003.md) |
+| API-AUTH-004  | POST   | `/api/v1/auth/refresh-token`  | Làm mới access token sử dụng refresh token.       | Mọi màn hình       | -                  | Cao        | [Chi tiết](../../DD/API/API-AUTH-004.md) |
 
 ## 2. Quản lý Nhân sự (HRM)
 

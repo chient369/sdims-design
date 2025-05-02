@@ -29,7 +29,7 @@ Màn hình này cho phép các nhà quản lý (部長 - Team Leader, 課長 - G
 *   **Admin:** Có thể cần quyền truy cập để cấu hình hoặc hỗ trợ, nhưng không phải người dùng nghiệp vụ chính.
 *   **Các vai trò khác (Sales, Nhân viên...):** **KHÔNG** có quyền truy cập màn hình này.
 
-## 3. Bố cục Màn hình (Layout Suggestion)
+## 3. Bố cục Màn hình
 
 *   **Khu vực Bộ lọc:** Đặt ở phía trên, bao gồm bộ lọc Thời gian và Team (nếu có quyền).
 *   **Khu vực Hành động:** Nút `Export`, nút điều hướng `Nhập Chi phí`.
