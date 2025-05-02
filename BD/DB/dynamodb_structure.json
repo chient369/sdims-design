@@ -1,0 +1,643 @@
+{
+    "dynamo_version": "1.0",
+    "notes": [
+        "Mô hình dữ liệu DynamoDB dựa trên access pattern",
+        "Sử dụng mô hình single-table với khóa phân vùng (PK) và khóa sắp xếp (SK)",
+        "GSI (Global Secondary Index) được sử dụng cho truy vấn đa chiều",
+        "Data được thiết kế theo cách denormalize để tối ưu hiệu suất truy vấn",
+        "Thuộc tính được kế thừa từ cấu trúc DB quan hệ gốc",
+        "Kiểu dữ liệu được chỉ định cho mỗi thuộc tính để đảm bảo tính nhất quán"
+    ],
+    "table": {
+        "name": "SDIMS_Main",
+        "primary_key": {
+            "partition_key": "PK",
+            "sort_key": "SK"
+        },
+        "indexes": [
+            {
+                "name": "GSI1",
+                "type": "global",
+                "partition_key": "GSI1PK",
+                "sort_key": "GSI1SK"
+            },
+            {
+                "name": "GSI2",
+                "type": "global",
+                "partition_key": "GSI2PK",
+                "sort_key": "GSI2SK"
+            },
+            {
+                "name": "GSI3",
+                "type": "global",
+                "partition_key": "GSI3PK",
+                "sort_key": "GSI3SK"
+            }
+        ],
+        "entity_types": {
+            "USER": {
+                "description": "Thông tin người dùng",
+                "key_pattern": {
+                    "PK": "USER#<id>",
+                    "SK": "METADATA#<id>"
+                },
+                "indexes": {
+                    "GSI1": {
+                        "GSI1PK": "USER",
+                        "GSI1SK": "<username>"
+                    },
+                    "GSI2": {
+                        "GSI2PK": "USER",
+                        "GSI2SK": "<email>"
+                    }
+                },
+                "attributes": [
+                    {"name": "id", "type": "String"},
+                    {"name": "username", "type": "String"},
+                    {"name": "password_hash", "type": "String"},
+                    {"name": "email", "type": "String"},
+                    {"name": "full_name", "type": "String"},
+                    {"name": "created_at", "type": "String (ISO8601 DateTime)"},
+                    {"name": "updated_at", "type": "String (ISO8601 DateTime)"}
+                ]
+            },
+            "ROLE": {
+                "description": "Vai trò người dùng với các quyền được gán",
+                "key_pattern": {
+                    "PK": "ROLE#<id>",
+                    "SK": "METADATA#<id>"
+                },
+                "indexes": {
+                    "GSI1": {
+                        "GSI1PK": "ROLE",
+                        "GSI1SK": "<name>"
+                    },
+                    "GSI3": {
+                        "GSI3PK": "PERMISSION#<permission_id>",
+                        "GSI3SK": "ROLE"
+                    }
+                },
+                "attributes": [
+                    {"name": "id", "type": "String"},
+                    {"name": "name", "type": "String"},
+                    {"name": "description", "type": "String"},
+                    {"name": "permissions", "type": "List<String>", "description": "Danh sách các permission_id được gán cho vai trò này"},
+                    {"name": "created_at", "type": "String (ISO8601 DateTime)"},
+                    {"name": "updated_at", "type": "String (ISO8601 DateTime)"}
+                ]
+            },
+            "USER_ROLE": {
+                "description": "Liên kết người dùng với vai trò",
+                "key_pattern": {
+                    "PK": "USER#<user_id>",
+                    "SK": "ROLE#<role_id>"
+                },
+                "indexes": {
+                    "GSI1": {
+                        "GSI1PK": "ROLE#<role_id>",
+                        "GSI1SK": "USER#<user_id>"
+                    }
+                },
+                "attributes": [
+                    {"name": "user_id", "type": "String"},
+                    {"name": "role_id", "type": "String"}
+                ]
+            },
+            "PERMISSION": {
+                "description": "Quyền trong hệ thống",
+                "key_pattern": {
+                    "PK": "PERMISSION#<id>",
+                    "SK": "METADATA#<id>"
+                },
+                "indexes": {
+                    "GSI1": {
+                        "GSI1PK": "PERMISSION",
+                        "GSI1SK": "<name>"
+                    }
+                },
+                "attributes": [
+                    {"name": "id", "type": "String"},
+                    {"name": "name", "type": "String"},
+                    {"name": "description", "type": "String"},
+                    {"name": "created_at", "type": "String (ISO8601 DateTime)"},
+                    {"name": "updated_at", "type": "String (ISO8601 DateTime)"}
+                ]
+            },
+            "EMPLOYEE": {
+                "description": "Thông tin nhân viên",
+                "key_pattern": {
+                    "PK": "EMPLOYEE#<id>",
+                    "SK": "METADATA#<id>"
+                },
+                "indexes": {
+                    "GSI1": {
+                        "GSI1PK": "EMPLOYEE",
+                        "GSI1SK": "<employee_code>"
+                    },
+                    "GSI2": {
+                        "GSI2PK": "EMPLOYEE_STATUS#<current_status>",
+                        "GSI2SK": "<last_name>#<first_name>"
+                    },
+                    "GSI3": {
+                        "GSI3PK": "EMPLOYEE_TEAM#<team>",
+                        "GSI3SK": "<last_name>#<first_name>"
+                    }
+                },
+                "attributes": [
+                    {"name": "id", "type": "String"},
+                    {"name": "user_id", "type": "String"},
+                    {"name": "employee_code", "type": "String"},
+                    {"name": "first_name", "type": "String"},
+                    {"name": "last_name", "type": "String"},
+                    {"name": "birth_date", "type": "String (ISO8601 Date)"},
+                    {"name": "hire_date", "type": "String (ISO8601 Date)"},
+                    {"name": "company_email", "type": "String"},
+                    {"name": "internal_account", "type": "String"},
+                    {"name": "address", "type": "String"},
+                    {"name": "phone_number", "type": "String"},
+                    {"name": "emergency_contact", "type": "String"},
+                    {"name": "position", "type": "String"},
+                    {"name": "team", "type": "String"},
+                    {"name": "reporting_leader_id", "type": "String"},
+                    {"name": "current_status", "type": "String (Enum: Allocated, Available, EndingSoon, OnLeave, Resigned)"},
+                    {"name": "status_updated_at", "type": "String (ISO8601 DateTime)"},
+                    {"name": "profile_picture_url", "type": "String"},
+                    {"name": "created_at", "type": "String (ISO8601 DateTime)"},
+                    {"name": "updated_at", "type": "String (ISO8601 DateTime)"},
+                    {"name": "created_by", "type": "String"},
+                    {"name": "updated_by", "type": "String"},
+                    {"name": "deleted_at", "type": "String (ISO8601 DateTime)"}
+                ]
+            },
+            "EMPLOYEE_SKILL": {
+                "description": "Kỹ năng của nhân viên",
+                "key_pattern": {
+                    "PK": "EMPLOYEE#<employee_id>",
+                    "SK": "SKILL#<skill_id>"
+                },
+                "indexes": {
+                    "GSI1": {
+                        "GSI1PK": "SKILL#<skill_id>",
+                        "GSI1SK": "EMPLOYEE#<employee_id>"
+                    },
+                    "GSI2": {
+                        "GSI2PK": "SKILL#<skill_id>",
+                        "GSI2SK": "<years_experience>",
+                        "include": ["employee_id", "self_assessment_level", "leader_assessment_level"]
+                    }
+                },
+                "attributes": [
+                    {"name": "id", "type": "String"},
+                    {"name": "employee_id", "type": "String"},
+                    {"name": "skill_id", "type": "String"},
+                    {"name": "years_experience", "type": "Number"},
+                    {"name": "self_assessment_level", "type": "String (Enum: Basic, Intermediate, Advanced)"},
+                    {"name": "leader_assessment_level", "type": "String (Enum: Basic, Intermediate, Advanced)"},
+                    {"name": "created_at", "type": "String (ISO8601 DateTime)"},
+                    {"name": "updated_at", "type": "String (ISO8601 DateTime)"}
+                ]
+            },
+            "SKILL_CATEGORY": {
+                "description": "Danh mục kỹ năng",
+                "key_pattern": {
+                    "PK": "SKILL_CATEGORY#<id>",
+                    "SK": "METADATA#<id>"
+                },
+                "indexes": {
+                    "GSI1": {
+                        "GSI1PK": "SKILL_CATEGORY",
+                        "GSI1SK": "<name>"
+                    }
+                },
+                "attributes": [
+                    {"name": "id", "type": "String"},
+                    {"name": "name", "type": "String"},
+                    {"name": "description", "type": "String"},
+                    {"name": "created_at", "type": "String (ISO8601 DateTime)"},
+                    {"name": "updated_at", "type": "String (ISO8601 DateTime)"}
+                ]
+            },
+            "SKILL": {
+                "description": "Kỹ năng",
+                "key_pattern": {
+                    "PK": "SKILL#<id>",
+                    "SK": "METADATA#<id>"
+                },
+                "indexes": {
+                    "GSI1": {
+                        "GSI1PK": "SKILL_CATEGORY#<category_id>",
+                        "GSI1SK": "<name>"
+                    }
+                },
+                "attributes": [
+                    {"name": "id", "type": "String"},
+                    {"name": "category_id", "type": "String"},
+                    {"name": "name", "type": "String"},
+                    {"name": "description", "type": "String"},
+                    {"name": "created_at", "type": "String (ISO8601 DateTime)"},
+                    {"name": "updated_at", "type": "String (ISO8601 DateTime)"}
+                ]
+            },
+            "PROJECT_HISTORY": {
+                "description": "Lịch sử tham gia dự án của nhân viên",
+                "key_pattern": {
+                    "PK": "EMPLOYEE#<employee_id>",
+                    "SK": "PROJECT_HISTORY#<id>"
+                },
+                "indexes": {
+                    "GSI1": {
+                        "GSI1PK": "PROJECT_HISTORY#<project_name>",
+                        "GSI1SK": "<start_date>"
+                    }
+                },
+                "attributes": [
+                    {"name": "id", "type": "String"},
+                    {"name": "employee_id", "type": "String"},
+                    {"name": "project_name", "type": "String"},
+                    {"name": "client_name", "type": "String"},
+                    {"name": "role", "type": "String"},
+                    {"name": "start_date", "type": "String (ISO8601 Date)"},
+                    {"name": "end_date", "type": "String (ISO8601 Date)"},
+                    {"name": "description", "type": "String"},
+                    {"name": "created_at", "type": "String (ISO8601 DateTime)"},
+                    {"name": "updated_at", "type": "String (ISO8601 DateTime)"}
+                ]
+            },
+            "EMPLOYEE_STATUS_LOG": {
+                "description": "Lịch sử thay đổi trạng thái nhân viên",
+                "key_pattern": {
+                    "PK": "EMPLOYEE#<employee_id>",
+                    "SK": "STATUS_LOG#<log_timestamp>"
+                },
+                "indexes": {
+                    "GSI1": {
+                        "GSI1PK": "STATUS#<status>",
+                        "GSI1SK": "<log_timestamp>"
+                    }
+                },
+                "attributes": [
+                    {"name": "id", "type": "String"},
+                    {"name": "employee_id", "type": "String"},
+                    {"name": "status", "type": "String (Enum: Allocated, Available, EndingSoon, OnLeave, Resigned)"},
+                    {"name": "project_name", "type": "String"},
+                    {"name": "allocation_percentage", "type": "Number"},
+                    {"name": "expected_end_date", "type": "String (ISO8601 Date)"},
+                    {"name": "log_timestamp", "type": "String (ISO8601 DateTime)"},
+                    {"name": "created_at", "type": "String (ISO8601 DateTime)"},
+                    {"name": "updated_at", "type": "String (ISO8601 DateTime)"}
+                ]
+            },
+            "EMPLOYEE_COST": {
+                "description": "Chi phí nhân viên theo tháng",
+                "key_pattern": {
+                    "PK": "EMPLOYEE#<employee_id>",
+                    "SK": "COST#<year>#<month>"
+                },
+                "indexes": {
+                    "GSI1": {
+                        "GSI1PK": "COST#<year>#<month>",
+                        "GSI1SK": "<currency>"
+                    }
+                },
+                "attributes": [
+                    {"name": "id", "type": "String"},
+                    {"name": "employee_id", "type": "String"},
+                    {"name": "year", "type": "Number"},
+                    {"name": "month", "type": "Number"},
+                    {"name": "cost_amount", "type": "Number"},
+                    {"name": "currency", "type": "String (3-letter code)"},
+                    {"name": "description", "type": "String"},
+                    {"name": "created_at", "type": "String (ISO8601 DateTime)"},
+                    {"name": "updated_at", "type": "String (ISO8601 DateTime)"}
+                ]
+            },
+            "EMPLOYEE_REVENUE": {
+                "description": "Doanh thu nhân viên theo tháng và hợp đồng",
+                "key_pattern": {
+                    "PK": "EMPLOYEE#<employee_id>",
+                    "SK": "REVENUE#<contract_id>#<year>#<month>"
+                },
+                "indexes": {
+                    "GSI1": {
+                        "GSI1PK": "CONTRACT#<contract_id>",
+                        "GSI1SK": "REVENUE#<year>#<month>"
+                    },
+                    "GSI2": {
+                        "GSI2PK": "REVENUE#<year>#<month>",
+                        "GSI2SK": "<currency>"
+                    }
+                },
+                "attributes": [
+                    {"name": "id", "type": "String"},
+                    {"name": "employee_id", "type": "String"},
+                    {"name": "contract_id", "type": "String"},
+                    {"name": "year", "type": "Number"},
+                    {"name": "month", "type": "Number"},
+                    {"name": "billing_rate", "type": "Number"},
+                    {"name": "allocation_percentage", "type": "Number"},
+                    {"name": "calculated_revenue", "type": "Number"},
+                    {"name": "currency", "type": "String (3-letter code)"},
+                    {"name": "created_at", "type": "String (ISO8601 DateTime)"},
+                    {"name": "updated_at", "type": "String (ISO8601 DateTime)"}
+                ]
+            },
+            "OPPORTUNITY": {
+                "description": "Cơ hội kinh doanh",
+                "key_pattern": {
+                    "PK": "OPPORTUNITY#<id>",
+                    "SK": "METADATA#<id>"
+                },
+                "indexes": {
+                    "GSI1": {
+                        "GSI1PK": "HUBSPOT_OPPORTUNITY#<hubspot_id>",
+                        "GSI1SK": "<name>"
+                    },
+                    "GSI2": {
+                        "GSI2PK": "OPPORTUNITY_STAGE#<deal_stage>",
+                        "GSI2SK": "<last_interaction_date>"
+                    },
+                    "GSI3": {
+                        "GSI3PK": "SALES#<assigned_sales_id>",
+                        "GSI3SK": "OPPORTUNITY#<follow_up_status>#<name>"
+                    }
+                },
+                "attributes": [
+                    {"name": "id", "type": "String"},
+                    {"name": "hubspot_id", "type": "String"},
+                    {"name": "name", "type": "String"},
+                    {"name": "client_name", "type": "String"},
+                    {"name": "estimated_value", "type": "Number"},
+                    {"name": "currency", "type": "String (3-letter code)"},
+                    {"name": "deal_stage", "type": "String"},
+                    {"name": "source", "type": "String (Enum: Hubspot, Manual)"},
+                    {"name": "assigned_sales_id", "type": "String"},
+                    {"name": "last_interaction_date", "type": "String (ISO8601 DateTime)"},
+                    {"name": "follow_up_status", "type": "String (Enum: Red, Yellow, Green)"},
+                    {"name": "onsite_priority", "type": "Boolean"},
+                    {"name": "hubspot_created_at", "type": "String (ISO8601 DateTime)"},
+                    {"name": "hubspot_last_updated_at", "type": "String (ISO8601 DateTime)"},
+                    {"name": "sync_status", "type": "String (Enum: Success, Failed, Pending)"},
+                    {"name": "last_sync_at", "type": "String (ISO8601 DateTime)"},
+                    {"name": "created_at", "type": "String (ISO8601 DateTime)"},
+                    {"name": "updated_at", "type": "String (ISO8601 DateTime)"}
+                ]
+            },
+            "OPPORTUNITY_ASSIGNMENT": {
+                "description": "Phân công theo dõi cơ hội",
+                "key_pattern": {
+                    "PK": "OPPORTUNITY#<opportunity_id>",
+                    "SK": "LEADER#<leader_id>"
+                },
+                "indexes": {
+                    "GSI1": {
+                        "GSI1PK": "LEADER#<leader_id>",
+                        "GSI1SK": "OPPORTUNITY#<opportunity_id>"
+                    }
+                },
+                "attributes": [
+                    {"name": "id", "type": "String"},
+                    {"name": "opportunity_id", "type": "String"},
+                    {"name": "leader_id", "type": "String"},
+                    {"name": "assigned_at", "type": "String (ISO8601 DateTime)"},
+                    {"name": "created_at", "type": "String (ISO8601 DateTime)"},
+                    {"name": "updated_at", "type": "String (ISO8601 DateTime)"}
+                ]
+            },
+            "OPPORTUNITY_NOTE": {
+                "description": "Ghi chú cho cơ hội",
+                "key_pattern": {
+                    "PK": "OPPORTUNITY#<opportunity_id>",
+                    "SK": "NOTE#<created_at>"
+                },
+                "indexes": {
+                    "GSI1": {
+                        "GSI1PK": "AUTHOR#<author_id>",
+                        "GSI1SK": "<created_at>"
+                    }
+                },
+                "attributes": [
+                    {"name": "id", "type": "String"},
+                    {"name": "opportunity_id", "type": "String"},
+                    {"name": "author_id", "type": "String"},
+                    {"name": "note_content", "type": "String"},
+                    {"name": "created_at", "type": "String (ISO8601 DateTime)"},
+                    {"name": "updated_at", "type": "String (ISO8601 DateTime)"}
+                ]
+            },
+            "CONTRACT": {
+                "description": "Hợp đồng với khách hàng",
+                "key_pattern": {
+                    "PK": "CONTRACT#<id>",
+                    "SK": "METADATA#<id>"
+                },
+                "indexes": {
+                    "GSI1": {
+                        "GSI1PK": "CONTRACT_CODE#<contract_code>",
+                        "GSI1SK": "<name>"
+                    },
+                    "GSI2": {
+                        "GSI2PK": "CONTRACT_STATUS#<status>",
+                        "GSI2SK": "<expiry_date>"
+                    },
+                    "GSI3": {
+                        "GSI3PK": "CLIENT#<client_name>",
+                        "GSI3SK": "<effective_date>"
+                    }
+                },
+                "attributes": [
+                    {"name": "id", "type": "String"},
+                    {"name": "contract_code", "type": "String"},
+                    {"name": "name", "type": "String"},
+                    {"name": "client_name", "type": "String"},
+                    {"name": "opportunity_id", "type": "String"},
+                    {"name": "sign_date", "type": "String (ISO8601 Date)"},
+                    {"name": "effective_date", "type": "String (ISO8601 Date)"},
+                    {"name": "expiry_date", "type": "String (ISO8601 Date)"},
+                    {"name": "total_value", "type": "Number"},
+                    {"name": "currency", "type": "String (3-letter code)"},
+                    {"name": "contract_type", "type": "String (Enum: FixedPrice, TM)"},
+                    {"name": "assigned_sales_id", "type": "String"},
+                    {"name": "status", "type": "String (Enum: New, Ongoing, Paused, Completed, Cancelled)"},
+                    {"name": "description", "type": "String"},
+                    {"name": "created_at", "type": "String (ISO8601 DateTime)"},
+                    {"name": "updated_at", "type": "String (ISO8601 DateTime)"},
+                    {"name": "created_by", "type": "String"},
+                    {"name": "updated_by", "type": "String"},
+                    {"name": "deleted_at", "type": "String (ISO8601 DateTime)"}
+                ]
+            },
+            "CONTRACT_PAYMENT_TERM": {
+                "description": "Điều khoản thanh toán của hợp đồng",
+                "key_pattern": {
+                    "PK": "CONTRACT#<contract_id>",
+                    "SK": "PAYMENT_TERM#<id>"
+                },
+                "indexes": {
+                    "GSI1": {
+                        "GSI1PK": "PAYMENT_STATUS#<payment_status>",
+                        "GSI1SK": "<expected_payment_date>"
+                    }
+                },
+                "attributes": [
+                    {"name": "id", "type": "String"},
+                    {"name": "contract_id", "type": "String"},
+                    {"name": "description", "type": "String"},
+                    {"name": "expected_payment_date", "type": "String (ISO8601 Date)"},
+                    {"name": "expected_amount", "type": "Number"},
+                    {"name": "currency", "type": "String (3-letter code)"},
+                    {"name": "payment_status", "type": "String (Enum: Pending, Paid, Overdue)"},
+                    {"name": "actual_payment_date", "type": "String (ISO8601 Date)"},
+                    {"name": "actual_amount_paid", "type": "Number"},
+                    {"name": "notes", "type": "String"},
+                    {"name": "created_at", "type": "String (ISO8601 DateTime)"},
+                    {"name": "updated_at", "type": "String (ISO8601 DateTime)"},
+                    {"name": "created_by", "type": "String"},
+                    {"name": "updated_by", "type": "String"}
+                ]
+            },
+            "CONTRACT_EMPLOYEE": {
+                "description": "Nhân viên tham gia hợp đồng",
+                "key_pattern": {
+                    "PK": "CONTRACT#<contract_id>",
+                    "SK": "EMPLOYEE#<employee_id>"
+                },
+                "indexes": {
+                    "GSI1": {
+                        "GSI1PK": "EMPLOYEE#<employee_id>",
+                        "GSI1SK": "CONTRACT#<contract_id>"
+                    }
+                },
+                "attributes": [
+                    {"name": "id", "type": "String"},
+                    {"name": "contract_id", "type": "String"},
+                    {"name": "employee_id", "type": "String"},
+                    {"name": "role", "type": "String"},
+                    {"name": "allocation_percentage", "type": "Number"},
+                    {"name": "start_date", "type": "String (ISO8601 Date)"},
+                    {"name": "end_date", "type": "String (ISO8601 Date)"},
+                    {"name": "created_at", "type": "String (ISO8601 DateTime)"},
+                    {"name": "updated_at", "type": "String (ISO8601 DateTime)"}
+                ]
+            },
+            "CONTRACT_FILE": {
+                "description": "Tập tin đính kèm với hợp đồng",
+                "key_pattern": {
+                    "PK": "CONTRACT#<contract_id>",
+                    "SK": "FILE#<id>"
+                },
+                "indexes": {
+                    "GSI1": {
+                        "GSI1PK": "UPLOADED_BY#<uploaded_by_id>",
+                        "GSI1SK": "<uploaded_at>"
+                    }
+                },
+                "attributes": [
+                    {"name": "id", "type": "String"},
+                    {"name": "contract_id", "type": "String"},
+                    {"name": "file_name", "type": "String"},
+                    {"name": "file_path", "type": "String"},
+                    {"name": "file_type", "type": "String"},
+                    {"name": "file_size", "type": "Number"},
+                    {"name": "uploaded_by_id", "type": "String"},
+                    {"name": "uploaded_at", "type": "String (ISO8601 DateTime)"},
+                    {"name": "created_at", "type": "String (ISO8601 DateTime)"},
+                    {"name": "updated_at", "type": "String (ISO8601 DateTime)"}
+                ]
+            },
+            "SALES_KPI": {
+                "description": "Chỉ tiêu doanh thu cho người bán hàng",
+                "key_pattern": {
+                    "PK": "SALES#<sales_user_id>",
+                    "SK": "KPI#<year>#<quarter>#<month>"
+                },
+                "indexes": {
+                    "GSI1": {
+                        "GSI1PK": "KPI#<year>#<quarter>",
+                        "GSI1SK": "SALES#<sales_user_id>"
+                    }
+                },
+                "attributes": [
+                    {"name": "id", "type": "String"},
+                    {"name": "sales_user_id", "type": "String"},
+                    {"name": "year", "type": "Number"},
+                    {"name": "quarter", "type": "Number"},
+                    {"name": "month", "type": "Number"},
+                    {"name": "target_revenue", "type": "Number"},
+                    {"name": "currency", "type": "String (3-letter code)"},
+                    {"name": "created_at", "type": "String (ISO8601 DateTime)"},
+                    {"name": "updated_at", "type": "String (ISO8601 DateTime)"},
+                    {"name": "created_by", "type": "String"},
+                    {"name": "updated_by", "type": "String"}
+                ]
+            },
+            "SYSTEM_CONFIG": {
+                "description": "Cấu hình hệ thống",
+                "key_pattern": {
+                    "PK": "SYSTEM_CONFIG",
+                    "SK": "CONFIG#<config_key>"
+                },
+                "attributes": [
+                    {"name": "id", "type": "String"},
+                    {"name": "config_key", "type": "String"},
+                    {"name": "config_value", "type": "String"},
+                    {"name": "description", "type": "String"},
+                    {"name": "created_at", "type": "String (ISO8601 DateTime)"},
+                    {"name": "updated_at", "type": "String (ISO8601 DateTime)"}
+                ]
+            },
+            "NOTIFICATION": {
+                "description": "Thông báo cho người dùng",
+                "key_pattern": {
+                    "PK": "USER#<user_id>",
+                    "SK": "NOTIFICATION#<created_at>"
+                },
+                "indexes": {
+                    "GSI1": {
+                        "GSI1PK": "NOTIFICATION#<related_entity_type>#<related_entity_id>",
+                        "GSI1SK": "<created_at>"
+                    }
+                },
+                "attributes": [
+                    {"name": "id", "type": "String"},
+                    {"name": "user_id", "type": "String"},
+                    {"name": "message", "type": "String"},
+                    {"name": "is_read", "type": "Boolean"},
+                    {"name": "related_entity_type", "type": "String"},
+                    {"name": "related_entity_id", "type": "String"},
+                    {"name": "created_at", "type": "String (ISO8601 DateTime)"},
+                    {"name": "updated_at", "type": "String (ISO8601 DateTime)"}
+                ]
+            }
+        },
+        "access_patterns": [
+            "Lấy thông tin chi tiết của một thực thể theo ID",
+            "Tìm người dùng theo username hoặc email",
+            "Lấy danh sách vai trò của một người dùng",
+            "Lấy danh sách quyền của một vai trò",
+            "Tìm nhân viên theo mã nhân viên",
+            "Lọc nhân viên theo trạng thái",
+            "Lọc nhân viên theo team",
+            "Lấy kỹ năng của một nhân viên",
+            "Tìm nhân viên có kỹ năng cụ thể với mức kinh nghiệm",
+            "Lấy lịch sử dự án của nhân viên",
+            "Lọc lịch sử trạng thái nhân viên",
+            "Tính chi phí và doanh thu của nhân viên theo tháng",
+            "Tìm kiếm cơ hội theo ID Hubspot",
+            "Lọc cơ hội theo giai đoạn deal",
+            "Lấy cơ hội của một nhân viên sales",
+            "Lấy ghi chú của cơ hội",
+            "Tìm hợp đồng theo mã",
+            "Lọc hợp đồng theo trạng thái",
+            "Tìm hợp đồng theo khách hàng",
+            "Lấy các điều khoản thanh toán của hợp đồng",
+            "Lọc thanh toán theo trạng thái",
+            "Lấy danh sách nhân viên tham gia hợp đồng",
+            "Tìm hợp đồng mà nhân viên tham gia",
+            "Lấy file đính kèm của hợp đồng",
+            "Lấy KPI của nhân viên sales theo thời gian",
+            "Lấy cấu hình hệ thống",
+            "Lấy thông báo của người dùng",
+            "Lọc thông báo theo thực thể liên quan"
+        ]
+    }
+} 
